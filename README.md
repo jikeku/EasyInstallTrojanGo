@@ -5,7 +5,7 @@
 3. ...
 ### Usage
 ```
-source <(curl -sL https://raw.githubusercontent.com/whyic/trojan-go/master/trojan_mult.sh)
+source <(curl -sL https://raw.githubusercontent.com/whyic/EasyInstallTrojanGo/master/trojan_mult.sh)
 ```
 ### Enable BBR
 ```
