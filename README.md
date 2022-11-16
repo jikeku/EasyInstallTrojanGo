@@ -1,4 +1,4 @@
-# troooooooooojan-goooooooooooo
+# Easy install Trojan-go
 ## Features
 1. Onekey install latest trojan-go server
 2. An AriaNg webservice at ( http | https )://yourdomain/aria
