@@ -6,7 +6,7 @@
 3. ...
 ### Usage
 ```
-source <(curl -sL https://raw.githubusercontent.com/whyic/EasyInstallTrojanGo/master/go.sh)
+source <(curl -sL https://raw.githubusercontent.com/whyic/EasyInstallTrojanGo/main/go.sh)
 ```
 ### Enable BBR
 ```
