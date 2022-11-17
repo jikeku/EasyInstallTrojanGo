@@ -66,7 +66,7 @@ EOF
     sleep 3
     rm -rf /usr/share/nginx/html/*
     cd /usr/share/nginx/html/
-    wget https://github.com/whyic/EasyInstallTrojanGo/raw/master/fakesite.zip >/dev/null 2>&1
+    wget https://github.com/whyic/EasyInstallTrojanGo/raw/main/fakesite.zip >/dev/null 2>&1
     unzip fakesite.zip >/dev/null 2>&1
     sleep 5
     if [ ! -d "/usr/src" ]; then
