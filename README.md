@@ -1,4 +1,4 @@
-# Easy install Trojan-go and Shadowsocks
+# Easy install trojan-go and shadowsocks
 
 ## Features
 1. Onekey install latest trojan-go server
