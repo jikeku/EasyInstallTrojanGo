@@ -18,7 +18,7 @@ VERSION=$VERSION_ID
 if [ "$RELEASE" == "centos" ] || [ "$RELEASE" == "almalinux" ]; then
     release="centos"
     systemPackage="yum"
-	green 'dectect centos! systemPackage is yum'
+    green 'dectect centos! systemPackage is yum'
 elif [ "$RELEASE" == "debian" ]; then
     release="debian"
     systemPackage="apt-get"
@@ -141,15 +141,15 @@ http {
     server {
         listen       0.0.0.0:80;
         server_name  $your_domain;
-	
-	location  /aria {
-		root /usr/share/nginx/html;
-		index index.php index.html index.htm;
-		}
-		
-	location  / {
+    
+    location  /aria {
+        root /usr/share/nginx/html;
+        index index.php index.html index.htm;
+        }
+        
+    location  / {
             return 301 https://$your_domain\$request_uri;
-        	}
+            }
         
     }
     
@@ -165,7 +165,7 @@ EOF
         wget https://github.com/p4gefau1t/trojan-go/releases/download/v${latest_version}/trojan-go-linux-amd64.zip >/dev/null 2>&1
         unzip trojan-go-linux-amd64.zip -d trojan-go >/dev/null 2>&1
         rm -f trojan-go-linux-amd64.zip
-		rm -rf ./trojan-go/example
+        rm -rf ./trojan-go/example
         green "请设置trojan-go密码，建议不要出现特殊字符"
         read -p "请输入密码 :" trojan_passwd
 
@@ -262,7 +262,7 @@ EOF
         ~/.acme.sh/acme.sh  --installcert  -d  $your_domain   \
             --key-file   /usr/src/trojan-cert/$your_domain/private.key \
             --fullchain-file  /usr/src/trojan-cert/$your_domain/fullchain.cer \
-            --reloadcmd  "systemctl restart trojan-go"	
+            --reloadcmd  "systemctl restart trojan-go"    
     else
         red "==================================="
         red "https证书没有申请成功，本次安装失败"
@@ -462,7 +462,7 @@ function update_trojan(){
         mkdir trojan-go_update_temp && cd trojan-go_update_temp
         wget https://github.com/p4gefau1t/trojan-go/releases/download/v${latest_version}/trojan-go-linux-amd64.zip
         unzip trojan-go-linux-amd64.zip -d trojan-go >/dev/null 2>&1
-		rm -rf ./trojan-go/example
+        rm -rf ./trojan-go/example
         mv -f ./trojan-go/* /usr/src/trojan-go/
         cd .. && rm -rf trojan-go_update_temp
         systemctl restart trojan-go
@@ -476,22 +476,121 @@ function update_trojan(){
    
 }
 
+function install_ss(){
+	green "======================="
+    blue "请输入SS服务端口"
+    green "======================="
+    read ss_port
+	$systemPackage install net-tools -y
+	wait
+	PortSS=`netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w ${ss_port}`
+	if [ -n "$PortSS" ]; then
+        processSS=`netstat -tlpn | awk -F '[: ]+' -v port=$PortSS '$5==port{print $9}'`
+        red "==========================================================="
+        red "检测到$PortSS端口被占用，占用进程为：${processSS}，本次安装结束"
+        red "==========================================================="
+        exit 1
+	fi
+	firewall_status=`systemctl status firewalld | grep "Active: active"`
+    if [ -n "$firewall_status" ]; then
+        green "检测到firewalld开启状态，添加放行$ss_port端口规则"
+        firewall-cmd --zone=public --add-port=$ss_port/tcp --permanent
+        firewall-cmd --reload
+    fi
+	green "======================="
+    blue "请输入SS密码"
+    green "======================="
+    read ss_password
+	$systemPackage install epel-release git -y
+	$systemPackage clean all
+	$systemPackage makecache
+	$systemPackage update
+	if [ ! -d "/usr/src" ]; then
+        mkdir /usr/src
+    fi
+	if [ ! -d "/usr/src/ss" ]; then
+        mkdir /usr/src/ss
+    fi
+	cd /usr/src/ss
+	git clone https://github.com/shadowsocks/shadowsocks-libev.git
+	cd shadowsocks-libev
+	git submodule update --init --recursive
+	$systemPackage install gcc gettext autoconf libtool automake make pcre-devel asciidoc xmlto c-ares-devel libev-devel libsodium-devel mbedtls-devel -y
+	./autogen.sh && ./configure && make
+	make install
+	if [ ! -d "/usr/src" ]; then
+        mkdir /usr/src
+    fi
+	if [ ! -d "/usr/src/ss" ]; then
+        mkdir /usr/src/ss
+    fi
+	rm -rf /usr/src/ss/ss-config
+    cat > /usr/src/ss/ss-config <<-EOF
+{
+    "server": "0.0.0.0",
+    "server_port": $ss_port,
+    "local_port": 1080,
+    "password": "$ss_password",
+    "timeout": 600,
+    "method": "chacha20-ietf-poly1305"
+}
+EOF
+    cat > ${systempwd}ss.service <<-EOF
+[Unit]  
+Description=ShadowsSocks Server 
+After=network.target  
+   
+[Service]  
+Type=simple  
+PIDFile=/usr/src/ss/ss.pid
+ExecStart=nohup /usr/local/bin/ss-server -c /usr/src/ss/ss-config &  
+ExecReload=/bin/kill -HUP \$MAINPID
+Restart=on-failure
+RestartSec=1s
+   
+[Install]  
+WantedBy=multi-user.target
+EOF
+
+    chmod +x ${systempwd}ss.service
+    systemctl enable ss.service
+	systemctl restart ss
+}
+
+function remove_ss(){
+    red "================================"
+    red "即将卸载ShadowsSocks....."
+    red "为防止误卸载，之前安装的倚赖将不会被卸载，请自行决定是否卸载，例如git"
+    red "================================"
+    systemctl stop ss
+    systemctl disable ss
+    rm -f ${systempwd}ss.service
+    cd /usr/src/ss/shadowsocks-libev
+	make uninstall
+    rm -rf /usr/src/ss/
+    green "=============="
+    green "ShadowSocks删除完毕"
+    green "=============="
+}
+
 start_menu(){
     # clear
     green " ======================================="
-    green " 介绍: 一键安装trojan-go"
+    green " 介绍: 一键安装trojan-go、ShadowSocks"
     green " 系统: centos7+/debian9+/ubuntu16.04+"
     green " 作者: Atrandys<mod by Laow>             "
     blue " 注意:"
     red " *1. 不要在任何生产环境使用此脚本"
     red " *2. 不要占用80和443端口"
-    red " *3. 若第二次使用脚本，请先执行卸载trojan-go"
+    red " *3. 若第二次使用脚本安装，请先执行卸载"
     green " ======================================="
     echo
     green " 1. 安装trojan-go"
     red " 2. 卸载trojan-go"
     green " 3. 升级trojan-go"
     green " 4. 修复证书"
+    green " 5. 安装ShadowSocks"
+	red " 6. 卸载ShadowSocks"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字 :" num
@@ -507,6 +606,12 @@ start_menu(){
     ;;
     4)
     repair_cert 
+    ;;
+	5)
+    install_ss 
+    ;;
+	6)
+    remove_ss 
     ;;
     0)
     exit 1
