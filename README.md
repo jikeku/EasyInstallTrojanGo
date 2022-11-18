@@ -2,8 +2,8 @@
 
 ## Features
 1. Onekey install latest trojan-go server
-2. An AriaNg webservice at ( http | https )://yourdomain/aria
-3. ...
+2. An AriaNg webservice at ( http | https )://yourdomain/aria when trojan-go is installed
+3. Onekey build and install latest shadowsocks-libev
 ### Usage
 ```
 source <(curl -sL https://raw.githubusercontent.com/whyic/EasyInstallTrojanGo/main/go.sh)
@@ -17,4 +17,4 @@ chmod +x tcp.sh
 
 
 ## Acknowledgements
- Unforked from https://github.com/atrandys/trojan, but a diffrent project now. Thanks to @atrandys .
+ Unforked from https://github.com/atrandys/trojan. Thanks to @atrandys.
